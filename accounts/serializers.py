@@ -14,7 +14,7 @@ class ExamSerializer(serializers.ModelSerializer):
 class ExamDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = Exam_Data
-        fields = ('exam_id','tot_blocks','tot_departments','reliever_duty','extra_blocks')        
+        fields = ('exam_id','tot_blocks','tot_departments','reliever_duty','extra_blocks','InterorIntra')        
 
 
 class UserSerializerWithToken(serializers.ModelSerializer):
