@@ -690,10 +690,10 @@ class GetFinalTableView(APIView):
         source_timetable={}
         source_availability={}
         source_faculty={}
+        id1=Exam.objects.latest('exam_id')
 
 
-
-        data = list(Deprtment_Data.objects.values())
+        data = list(Deprtment_Data.objects.values({'exam_id':id1}))
         for e in data:
             departments.append(e['name_of_department'])
             source_timetable[e['name_of_department']]=e['exam_timetable_csv_location']
