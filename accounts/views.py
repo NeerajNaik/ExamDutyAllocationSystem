@@ -693,7 +693,7 @@ class GetFinalTableView(APIView):
         id1=Exam.objects.latest('exam_id')
         print(id1)
 
-        data = list(Deprtment_Data.objects.values())
+        data = list(Deprtment_Data.objects.filter(exam_id=id1).values())
         print(data)
         for e in data:
             departments.append(e['name_of_department'])
