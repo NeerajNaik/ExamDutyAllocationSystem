@@ -83,7 +83,7 @@ class Exam_Data(models.Model):
     tot_departments = models.IntegerField()
     reliever_duty = models.IntegerField()
     extra_blocks = models.IntegerField()
-    InterorIntra = models.CharField(max_length=150)
+    InterorIntra = models.CharField(max_length=150,null=True,blank=True)
     
     def __int__(self):
         return self.exam_id
