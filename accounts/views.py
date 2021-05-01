@@ -339,20 +339,20 @@ class GetFinalTableView(APIView):
         _default.default = JSONEncoder().default
         JSONEncoder.default = _default
 
-        # class Duty():
-        #     def __init__(self,uid,fac_dept,dept,date,slot,categ):
-        #         self.uid=uid
-        #         self.fac_dept=fac_dept
-        #         self.dept=dept
-        #         self.date=date
-        #         self.slot=slot
-        #         self.categ=categ
-        #     def __repr__(self):
-        #         # print(self.uid)
-        #         # print(self.leave_day)
-        #         return " "+self.uid+" "+self.fac_dept+" "+self.date+" "+self.dept+" "+self.slot+" "+self.categ
-        #     def to_json(self):
-        #         return self.__dict__
+        class Duty():
+            def __init__(self,uid,fac_dept,dept,date,slot,categ):
+                self.uid=uid
+                self.fac_dept=fac_dept
+                self.dept=dept
+                self.date=date
+                self.slot=slot
+                self.categ=categ
+            def __repr__(self):
+                # print(self.uid)
+                # print(self.leave_day)
+                return " "+self.uid+" "+self.fac_dept+" "+self.date+" "+self.dept+" "+self.slot+" "+self.categ
+            def to_json(self):
+                return self.__dict__
 
         class Teacher():
             preading_duty=[]
