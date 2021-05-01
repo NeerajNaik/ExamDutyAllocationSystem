@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
-from .serializers import UserSerializer,UserSerializerWithToken,ExamSerializer,ExamDataSerializer
+from .serializers import UserSerializer,UserSerializerWithToken,ExamSerializer,ExamDataSerializer,DutyDataSerializer
 from rest_framework import permissions, status
 from rest_framework.parsers import MultiPartParser, FormParser
 # from django.utils.decorators import method_decorator
@@ -10,7 +10,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_jwt.views import ObtainJSONWebToken
-from .models import Exam,Exam_Data,Deprtment_Data
+from .models import Exam,Exam_Data,Deprtment_Data,Duty
 
 import csv
 import codecs
@@ -26,6 +26,7 @@ from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.conf import settings
 from django.http import JsonResponse
+from django.core.mail import send_mail
 # class LoginView(APIView):
 
 #     permission_classes = (permissions.AllowAny,)
@@ -82,6 +83,7 @@ class GetExamView(APIView):
     permission_classes = (permissions.AllowAny,)
     def get(self,request):
         data = list(Exam.objects.values())
+
         # print(data)
         return JsonResponse({'data': data},  status=status.HTTP_201_CREATED)
         
@@ -102,6 +104,10 @@ class GetExamDataView(APIView):
     permission_classes = (permissions.AllowAny,)
     def get(self,request):
         data = list(Exam_Data.objects.values())
+        id1=Exam.objects.latest('exam_id')
+        e=list(Exam_Data.objects.filter(exam_id=id1).values())
+        print(id1)
+        print(e[0]['reliever_duty'])
         # print(data)
         return JsonResponse({'data': data},  status=status.HTTP_201_CREATED)
 
@@ -109,7 +115,15 @@ class GetDeprtmentDataView(APIView):
     permission_classes = (permissions.AllowAny,)
     def get(self,request):
         data = list(Deprtment_Data.objects.values())
-        print(data[0]['name_of_department'])
+        # send_mail(
+        # 'Subject here',
+        # 'Here is the message.',
+        # 'djangonan123@gmail.com',
+        # ['vatsal.pathak003@gmail.com'],
+        # fail_silently=False,
+        # )
+        
+        # print(data[0]['name_of_department'])
         # print(data)
         return JsonResponse({'data': data},  status=status.HTTP_201_CREATED)
 
@@ -314,6 +328,7 @@ class UploadCSV(APIView):
  
 
 class GetFinalTableView(APIView):
+    # Article.objects.filter(pk=1).update(title="New Title")
     permission_classes = (permissions.AllowAny,)
     def get(self,request):
         
@@ -324,20 +339,20 @@ class GetFinalTableView(APIView):
         _default.default = JSONEncoder().default
         JSONEncoder.default = _default
 
-        class Duty():
-            def __init__(self,uid,fac_dept,dept,date,slot,categ):
-                self.uid=uid
-                self.fac_dept=fac_dept
-                self.dept=dept
-                self.date=date
-                self.slot=slot
-                self.categ=categ
-            def __repr__(self):
-                # print(self.uid)
-                # print(self.leave_day)
-                return " "+self.uid+" "+self.fac_dept+" "+self.date+" "+self.dept+" "+self.slot+" "+self.categ
-            def to_json(self):
-                return self.__dict__
+        # class Duty():
+        #     def __init__(self,uid,fac_dept,dept,date,slot,categ):
+        #         self.uid=uid
+        #         self.fac_dept=fac_dept
+        #         self.dept=dept
+        #         self.date=date
+        #         self.slot=slot
+        #         self.categ=categ
+        #     def __repr__(self):
+        #         # print(self.uid)
+        #         # print(self.leave_day)
+        #         return " "+self.uid+" "+self.fac_dept+" "+self.date+" "+self.dept+" "+self.slot+" "+self.categ
+        #     def to_json(self):
+        #         return self.__dict__
 
         class Teacher():
             preading_duty=[]
@@ -709,3 +724,20 @@ class GetFinalTableView(APIView):
         print(json.dumps(timetable))
         return Response(timetable, status=status.HTTP_201_CREATED)
 
+
+class SaveAndCheckView(APIView):
+    permission_classes = (permissions.AllowAny,)
+    # parser_classes = (FormParser, MultiPartParser)
+
+    def post(self, request):
+        q = request.data
+        print(q)
+        eid=q['exam_id']
+        exam_id= Exam(
+                exam_id=eid
+            )
+        print(exam_id)   
+        Exam.objects.filter(exam_id=exam_id).update(is_save=q['save'],is_notif=q['checked']) 
+
+
+        return Response({"success": "Good job, buddy"})

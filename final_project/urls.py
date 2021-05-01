@@ -19,7 +19,7 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
-from accounts.views import RegisterView,current_user,UploadCSV,ExamView,ExamDataView,GetExamView,GetExamDataView,GetDeprtmentDataView,GetFinalTableView
+from accounts.views import RegisterView,current_user,UploadCSV,ExamView,ExamDataView,GetExamView,GetExamDataView,GetDeprtmentDataView,GetFinalTableView,SaveAndCheckView
 from rest_framework_jwt.views import obtain_jwt_token
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -34,6 +34,7 @@ urlpatterns = [
     path('uploadcsv/',UploadCSV.as_view()),
     path('getdepartmentdata/',GetDeprtmentDataView.as_view()),
     path('getfinaltable/',GetFinalTableView.as_view()),
+    path('saveandcheck/',SaveAndCheckView.as_view()),
     path('current_user/', current_user),
     path('token-auth/', obtain_jwt_token),
 ]

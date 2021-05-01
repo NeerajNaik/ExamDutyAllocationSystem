@@ -78,6 +78,16 @@ CORS_ORIGIN_REGEX_WHITELIST = [
     'http://localhost:3000',
 ]
 
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_USE_TLS = True
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'djangonan123@gmail.com'
+EMAIL_HOST_PASSWORD = 'djangonan123MIP'
+
+
+
 ROOT_URLCONF = 'final_project.urls'
 
 TEMPLATES = [

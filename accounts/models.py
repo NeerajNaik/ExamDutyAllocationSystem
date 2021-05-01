@@ -65,6 +65,8 @@ class Exam(models.Model):
     name_of_exam = models.CharField(max_length=150)
     description_of_exam = models.TextField(null=True,blank=True)
     created_at = models.DateTimeField(default=now)
+    is_save = models.BooleanField(default=False,null=True,blank=True)
+    is_notif = models.BooleanField(default=False,null=True,blank=True)
     # created_at= models.DateTimeField(editable=False,null=True,blank=True)
     
 
@@ -84,6 +86,7 @@ class Exam_Data(models.Model):
     reliever_duty = models.IntegerField()
     extra_blocks = models.IntegerField()
     InterorIntra = models.CharField(max_length=150,null=True,blank=True)
+    # inter/intra 
     
     def __int__(self):
         return self.exam_id
@@ -97,6 +100,39 @@ class Deprtment_Data(models.Model):
     def __str__(self):
         return self.name_of_department
 
+class Duty(models.Model):
+    exam_id = models.ForeignKey('Exam', on_delete=models.CASCADE)
+    uid =  models.CharField(max_length=150)
+    fac_dept =  models.CharField(max_length=150)
+    dept =  models.CharField(max_length=150)
+    slot =  models.CharField(max_length=150)
+    categ =  models.CharField(max_length=150)
+    date = models.DateField()
+    
+# proofORlecture_csv_location = models.CharField(max_length=150,null=True,blank=True)
+    # def __str__(self):
+    #     return self.name_of_department    
+    def __str__(self):
+        # print(self.uid)
+        # print(self.leave_day)
+        return " "+self.uid+" "+self.fac_dept+" "+self.date+" "+self.dept+" "+self.slot+" "+self.categ
+    def to_json(self):
+        return self.__dict__      
+          
+# class Duty():
+#     def __init__(self,uid,fac_dept,dept,date,slot,categ):
+#         self.uid=uid
+#         self.fac_dept=fac_dept
+#         self.dept=dept
+#         self.date=date
+#         self.slot=slot
+#         self.categ=categ
+#     def __repr__(self):
+#         # print(self.uid)
+#         # print(self.leave_day)
+#         return " "+self.uid+" "+self.fac_dept+" "+self.date+" "+self.dept+" "+self.slot+" "+self.categ
+#     def to_json(self):
+#         return self.__dict__
     # @property
 
 # class User(models.Model):
