@@ -100,14 +100,16 @@ class Deprtment_Data(models.Model):
     def __str__(self):
         return self.name_of_department
 
-class Duty(models.Model):
+class SDuty(models.Model):
     exam_id = models.ForeignKey('Exam', on_delete=models.CASCADE)
     uid =  models.CharField(max_length=150)
     fac_dept =  models.CharField(max_length=150)
     dept =  models.CharField(max_length=150)
     slot =  models.CharField(max_length=150)
     categ =  models.CharField(max_length=150)
-    date = models.DateField()
+    # date = models.DateField()
+    date =  models.CharField(max_length=150)
+    email = models.EmailField(null=True,blank=True)
     
 # proofORlecture_csv_location = models.CharField(max_length=150,null=True,blank=True)
     # def __str__(self):

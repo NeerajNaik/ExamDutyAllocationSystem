@@ -10,7 +10,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_jwt.views import ObtainJSONWebToken
-from .models import Exam,Exam_Data,Deprtment_Data,Duty
+from .models import Exam,Exam_Data,Deprtment_Data,SDuty
 
 import csv
 import codecs
@@ -39,6 +39,9 @@ from django.core.mail import send_mail
 
 #         }
 #         return Response(data)
+
+array =[]
+faculty_id = []
 
 @api_view(['GET'])
 def current_user(request):
@@ -106,7 +109,7 @@ class GetExamDataView(APIView):
         data = list(Exam_Data.objects.values())
         id1=Exam.objects.latest('exam_id')
         e=list(Exam_Data.objects.filter(exam_id=id1).values())
-        print(id1)
+        print(id1.exam_id)
         print(e[0]['reliever_duty'])
         # print(data)
         return JsonResponse({'data': data},  status=status.HTTP_201_CREATED)
@@ -332,6 +335,7 @@ class GetFinalTableView(APIView):
     permission_classes = (permissions.AllowAny,)
     def get(self,request):
         
+        global array
 
         def _default(self, obj):
             return getattr(obj.__class__, "to_json", _default.default)(obj)
@@ -340,13 +344,14 @@ class GetFinalTableView(APIView):
         JSONEncoder.default = _default
 
         class Duty():
-            def __init__(self,uid,fac_dept,dept,date,slot,categ):
+            def __init__(self,uid,fac_dept,dept,date,slot,categ,email=None):
                 self.uid=uid
                 self.fac_dept=fac_dept
                 self.dept=dept
                 self.date=date
                 self.slot=slot
                 self.categ=categ
+                self.email=email
             def __repr__(self):
                 # print(self.uid)
                 # print(self.leave_day)
@@ -355,12 +360,14 @@ class GetFinalTableView(APIView):
                 return self.__dict__
 
         class Teacher():
+            global faculty_id
             preading_duty=[]
             leave_day=[]
             duties=[]
             necessity=0
             prob=0
             def __init__(self,uid,name,department,t_duties,exam_days,email=None,contact=None):
+                faculty_id.append(uid)
                 self.uid=uid
                 self.name=name
                 #for constraint of only one duty per day
@@ -419,7 +426,11 @@ class GetFinalTableView(APIView):
                         c+=1
                         continue
                     total_duties+=int(rows[3])
-                    teacher=Teacher(rows[0],rows[1],department,int(rows[3]),exam_days)
+                    if rows[4]!="":
+                        #print(rows[4],"hh")
+                        teacher=Teacher(rows[0],rows[1],department,int(rows[3]),exam_days,rows[4])
+                    else:
+                        teacher=Teacher(rows[0],rows[1],department,int(rows[3]),exam_days)
                     #tmp={"uid":rows[0],"name":rows[1],"duties":rows[3]}
                     dict_from_csv[rows[0]]=teacher
             dict_from_csv["total_duties"]=total_duties
@@ -427,9 +438,9 @@ class GetFinalTableView(APIView):
             return dict_from_csv
 
 
-        def load_timetable(path):
+        def load_timetable(path,reliever):
             #path ="T_T.csv"
-            reliever = 0.2
+            #reliever = 0.2
             df = pandas.read_csv(path)
             i=1
             slots=0
@@ -455,7 +466,7 @@ class GetFinalTableView(APIView):
                 after= after + math.ceil(after*reliever)
                 t1.append(after)
                 temp["after"]=t1
-
+                #print(morn , after)
                 slots = slots + morn + after
                 a[df.columns[i]]=temp
                 i+=2
@@ -504,7 +515,7 @@ class GetFinalTableView(APIView):
             #cast according to needs
             #print(df.loc[int(list(faculty.keys())[0]),:])
 
-        def process(department,faculty,timetable_main):
+        def process(department,faculty,timetable_main, department_selection):
             #duties=[]
             
             loopbreak=True
@@ -514,14 +525,18 @@ class GetFinalTableView(APIView):
                     #change very previous departments timetable
                     #break
                     print("change previous dept tt")
-                    return False
+                    return False,[],[]
                 complete_faculty=copy.deepcopy(faculty)
 
                 qualified_main={}
                 for i in complete_faculty.keys():
                     #inter department strict or not
-                    if i != department:
+                    if department_selection == "intra":
+                        if i != department:
+                            qualified_main.update(complete_faculty[i])
+                    else:
                         qualified_main.update(complete_faculty[i])
+
                 
                 qualified = qualified_main
 
@@ -582,25 +597,25 @@ class GetFinalTableView(APIView):
                                         index=random.randint(0,len(available)-1)
                                         allotted=available.pop(index)
                                         allotted.lduty-=1
-                                        allocated_duties.append(Duty(allotted.uid,allotted.department,department,date,"morn",categ))
+                                        allocated_duties.append(Duty(allotted.uid,allotted.department,department,date,"morn",categ,allotted.email))
                                     else:
                                         index=random.randint(0,len(morn_only)-1)
                                         allotted=morn_only.pop(index)
                                         allotted.lduty-=1
-                                        allocated_duties.append(Duty(allotted.uid,allotted.department,department,date,"morn",categ))
+                                        allocated_duties.append(Duty(allotted.uid,allotted.department,department,date,"morn",categ,allotted.email))
 
                                 elif len(morn_only)==0:
                                 
                                     index=random.randint(0,len(available)-1)
                                     allotted=available.pop(index)
                                     allotted.lduty-=1
-                                    allocated_duties.append(Duty(allotted.uid,allotted.department,department,date,"morn",categ))
+                                    allocated_duties.append(Duty(allotted.uid,allotted.department,department,date,"morn",categ,allotted.email))
 
                                 elif len(available)==0:
                                     index=random.randint(0,len(morn_only)-1)
                                     allotted=morn_only.pop(index)
                                     allotted.lduty-=1
-                                    allocated_duties.append(Duty(allotted.uid,allotted.department,department,date,"morn",categ))
+                                    allocated_duties.append(Duty(allotted.uid,allotted.department,department,date,"morn",categ,allotted.email))
                             day["morn"].append(allocated_duties)
                         else:
                             #change previous days timetable
@@ -634,25 +649,25 @@ class GetFinalTableView(APIView):
                                         index=random.randint(0,len(available)-1)
                                         allotted=available.pop(index)
                                         allotted.lduty-=1
-                                        allocated_duties.append(Duty(allotted.uid,allotted.department,department,date,"after",categ))
+                                        allocated_duties.append(Duty(allotted.uid,allotted.department,department,date,"after",categ,allotted.email))
                                     else:
                                         index=random.randint(0,len(after_only)-1)
                                         allotted=after_only.pop(index)
                                         allotted.lduty-=1
-                                        allocated_duties.append(Duty(allotted.uid,allotted.department,department,date,"after",categ))
+                                        allocated_duties.append(Duty(allotted.uid,allotted.department,department,date,"after",categ,allotted.email))
 
                                 elif len(morn_only)==0:
                                 
                                     index=random.randint(0,len(available)-1)
                                     allotted=available.pop(index)
                                     allotted.lduty-=1
-                                    allocated_duties.append(Duty(allotted.uid,allotted.department,department,date,"after",categ))
+                                    allocated_duties.append(Duty(allotted.uid,allotted.department,department,date,"after",categ,allotted.email))
 
                                 elif len(available)==0:
                                     index=random.randint(0,len(morn_only)-1)
                                     allotted=morn_only.pop(index)
                                     allotted.lduty-=1
-                                    allocated_duties.append(Duty(allotted.uid,allotted.department,department,date,"after",categ))
+                                    allocated_duties.append(Duty(allotted.uid,allotted.department,department,date,"after",categ,allotted.email))
                             day["after"].append(allocated_duties)
 
                         else:
@@ -670,27 +685,42 @@ class GetFinalTableView(APIView):
                     # print(timetable)
                     return True,time_tb,complete_faculty
 
-
+        def add_to_list(timetable_tmp,departments):
+            array = []
+            for i in departments:
+                p_work = timetable_tmp[i]
+                for j in p_work.keys():
+                    #j accesses all dates
+                    x= p_work[j]['morn'][3]
+                    for k in x:
+                        array.append(k)
+                    x= p_work[j]['after'][3]
+                    for k in x:
+                        array.append(k)
+            return array
                     
-        def driver(source_timetable,source_faculty,source_availability,departments):
+        def driver(source_timetable,source_faculty,source_availability,departments,reliever,department_selection):
             faculty=dict()
             timetable=dict()
             for i in departments:
-                timetable[i]=load_timetable(source_timetable[i])
+                timetable[i]=load_timetable(source_timetable[i],reliever)
                 faculty[i]=load_compulsory_duty(source_faculty[i],i,timetable[i])
                 #print(faculty[i],i)
                 load_availability(source_availability[i],i,faculty[i],timetable[i])
+                # print(i)
+                # print(timetable[i]["total"])
+                # print(faculty[i]["total_duties"])
             c=0
-            
+            #return
             while True:
                 c+=1
                 if c==50:
-                    return False,"Unable to generate a schedule"
+                    return False,"Unable to generate a schedule","",""
                 faculty_tmp=copy.deepcopy(faculty)
                 timetable_tmp=copy.deepcopy(timetable)
                 op=True#okay to exit
                 for i in departments:
-                    op,timetable_tmp[i],faculty_tmp = process(i,faculty_tmp,timetable_tmp)
+                    op,timetable_tmp[i],faculty_tmp = process(i,faculty_tmp,timetable_tmp,department_selection)
                     #if op False, restart generation
                     if not op:
                         break
@@ -700,14 +730,62 @@ class GetFinalTableView(APIView):
                     # print(faculty_tmp)
                     # print("\n\n\n")
                     # print(timetable_tmp)
-                    return True,faculty_tmp,timetable_tmp
+                    array = add_to_list(timetable_tmp,departments)
+                    # print("\n\n array\n\n")
+                    # print(array,len(array))
+                    return True,faculty_tmp,timetable_tmp,array
+            #array = add_to_list(timetable_tmp,departments)
+
+
+        import time
+        #print(int(time.time()))
+        def write_to_csv(department,timetable,examid,time):
+            import os
+            #print(os.getcwd())
+            
+            if not os.path.exists(str(examid)):
+                os.makedirs(str(examid))
+            stri=str(examid)+"\\"+str(department)+"_"+str(time)+".csv"
+            with open(stri, 'w', newline='') as file:
+                writer = csv.writer(file)
+                write_data=[]
+                for i in timetable[department].keys():
+                    write_data.append(i)
+                    write_data.append("")
+                writer.writerow(write_data)
+                write_data=[]
+                for i in timetable[department].keys():
+                    write_data.append("morn")
+                    write_data.append("after")
+                writer.writerow(write_data)
+                all=[]
+                
+                for i in timetable[department].keys():
+                    all.append(timetable[department][i]["morn"][3])
+                    all.append(timetable[department][i]["after"][3])
+
+                for i in range(10):
+                    write_data=[]
+                    for j in all:
+                        if i>=len(j):
+                            write_data.append("")
+                        else:
+                            write_data.append(j[i].__dict__)
+                    writer.writerow(write_data)
+                stri=str(os.getcwd())+"\\"+stri
+                print(stri)
+                return stri
         departments=[]
         source_timetable={}
         source_availability={}
         source_faculty={}
         id1=Exam.objects.latest('exam_id')
-        print(id1)
-
+        e=list(Exam_Data.objects.filter(exam_id=id1).values())
+        print(id1.exam_id)
+        print(e[0]['reliever_duty'])
+        reliever = (e[0]['reliever_duty'])/100
+        department_selection = e[0]['InterorIntra']
+        # departments=["COMP","MECH","ETRX"]
         data = list(Deprtment_Data.objects.filter(exam_id=id1).values())
         print(data)
         for e in data:
@@ -715,14 +793,44 @@ class GetFinalTableView(APIView):
             source_timetable[e['name_of_department']]=e['exam_timetable_csv_location']
             source_availability[e['name_of_department']]=e['availability_csv_location']
             source_faculty[e['name_of_department']]=e['duty_csv_location']
-        
-        # departments=["COMP","MECH","ETRX"]
         # source_timetable={"COMP":"T_T.csv","MECH":"T_T1.csv","ETRX":"T_T3.csv"}
         # source_availability={"COMP":"T_T proof.csv","MECH":"T_T proof1.csv","ETRX":"T_T proof3.csv"}
         # source_faculty={"COMP":"T_duties.csv","MECH":"T_duties1.csv","ETRX":"T_duties3.csv"}
-        op_result,faculty,timetable=driver(source_timetable,source_faculty,source_availability,departments)
+        op_result,faculty,timetable,array=driver(source_timetable,source_faculty,source_availability,departments,reliever,department_selection)
+        if not op_result:
+            print("ERROR, unable to generate timetable")
         print(json.dumps(timetable))
+        
+        #print(timetable)
+
+        x=time.time()
+        exam_id=id1.exam_id    
+        for dept in departments:    
+            write_to_csv(dept,timetable,exam_id,x)           
         return Response(timetable, status=status.HTTP_201_CREATED)
+
+        # departments=[]
+        # source_timetable={}
+        # source_availability={}
+        # source_faculty={}
+        # id1=Exam.objects.latest('exam_id')
+        # print(id1)
+
+        # data = list(Deprtment_Data.objects.filter(exam_id=id1).values())
+        # print(data)
+        # for e in data:
+        #     departments.append(e['name_of_department'])
+        #     source_timetable[e['name_of_department']]=e['exam_timetable_csv_location']
+        #     source_availability[e['name_of_department']]=e['availability_csv_location']
+        #     source_faculty[e['name_of_department']]=e['duty_csv_location']
+        
+        # # departments=["COMP","MECH","ETRX"]
+        # # source_timetable={"COMP":"T_T.csv","MECH":"T_T1.csv","ETRX":"T_T3.csv"}
+        # # source_availability={"COMP":"T_T proof.csv","MECH":"T_T proof1.csv","ETRX":"T_T proof3.csv"}
+        # # source_faculty={"COMP":"T_duties.csv","MECH":"T_duties1.csv","ETRX":"T_duties3.csv"}
+        # op_result,faculty,timetable=driver(source_timetable,source_faculty,source_availability,departments)
+        # print(json.dumps(timetable))
+        # return Response(timetable, status=status.HTTP_201_CREATED)
 
 
 class SaveAndCheckView(APIView):
@@ -730,12 +838,48 @@ class SaveAndCheckView(APIView):
     # parser_classes = (FormParser, MultiPartParser)
 
     def post(self, request):
+        global array
+        global faculty_id
+        print(array,'asdsudgisduuiosdai\n\n\n\n\n')
         q = request.data
         print(q)
         eid=q['exam_id']
         exam_id= Exam(
                 exam_id=eid
             )
+        SDuty.objects.filter(exam_id=exam_id).delete()    
+        for e in array:
+            m= SDuty(
+                exam_id=exam_id,    
+                uid=e.uid,
+                fac_dept=e.fac_dept,
+                dept=e.dept,
+                slot=e.slot,
+                categ=e.categ,
+                date=e.date,
+                email=e.email
+                )
+            m.save()  
+        for i in faculty_id:
+            
+            l=list(SDuty.objects.filter(exam_id=exam_id,uid=i).values())
+            print(l)
+            msg = 'For'+' '+str(eid)+' with id '+ i 
+            email = ''
+            for j in l:
+                email = j['email']
+                msg+='\nDuty on '+j['date']+' Dept '+j["dept"]+' Slot '+j["slot"]+' Categ '+j['categ']
+            if(email!=None and q['checked']):
+                send_mail(
+                'Subject here',
+                msg,
+                'djangonan123@gmail.com',
+                [email],
+                fail_silently=False,
+                )
+            print(msg,email)
+
+
         print(exam_id)   
         Exam.objects.filter(exam_id=exam_id).update(is_save=q['save'],is_notif=q['checked']) 
 
