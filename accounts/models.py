@@ -81,10 +81,10 @@ class Exam(models.Model):
         return self.exam_id
 class Exam_Data(models.Model):
     exam_id = models.ForeignKey('Exam', on_delete=models.CASCADE)
-    tot_blocks = models.IntegerField()
+    # tot_blocks = models.IntegerField()
     tot_departments = models.IntegerField()
     reliever_duty = models.IntegerField()
-    extra_blocks = models.IntegerField()
+    # extra_blocks = models.IntegerField()
     InterorIntra = models.CharField(max_length=150,null=True,blank=True)
     # inter/intra 
     
