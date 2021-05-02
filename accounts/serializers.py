@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User,Exam,Exam_Data
+from .models import User,Exam,Exam_Data,Duty
 from rest_framework_jwt.settings import api_settings
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -18,7 +18,7 @@ class ExamDataSerializer(serializers.ModelSerializer):
 
 class DutyDataSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Exam_Data
+        model = Duty
         fields = ('exam_id','uid','fac_dept','dept','slot','categ','date')        
 
 class UserSerializerWithToken(serializers.ModelSerializer):
