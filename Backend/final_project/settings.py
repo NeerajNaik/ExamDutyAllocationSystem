@@ -84,7 +84,7 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_USE_TLS = True
 EMAIL_PORT = 587
 EMAIL_HOST_USER = 'djangonan123@gmail.com'
-EMAIL_HOST_PASSWORD = 'djangonan123MIP'
+EMAIL_HOST_PASSWORD = ''
 
 
 
